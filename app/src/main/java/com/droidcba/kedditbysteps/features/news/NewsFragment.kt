@@ -16,9 +16,9 @@ import com.droidcba.kedditbysteps.commons.RxBaseFragment
 import com.droidcba.kedditbysteps.commons.extensions.inflate
 import com.droidcba.kedditbysteps.features.news.adapter.NewsAdapter
 import com.droidcba.kedditbysteps.features.news.adapter.NewsDelegateAdapter
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.news_fragment.*
-import rx.android.schedulers.AndroidSchedulers
-import rx.schedulers.Schedulers
 import javax.inject.Inject
 
 class NewsFragment : RxBaseFragment(), NewsDelegateAdapter.onViewSelectedListener {
@@ -86,7 +86,7 @@ class NewsFragment : RxBaseFragment(), NewsDelegateAdapter.onViewSelectedListene
         val subscription = newsManager.getNews(redditNews?.after ?: "")
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe (
+                .subscribe(
                         { retrievedNews ->
                             redditNews = retrievedNews
                             (news_list.adapter as NewsAdapter).addNews(retrievedNews.news)

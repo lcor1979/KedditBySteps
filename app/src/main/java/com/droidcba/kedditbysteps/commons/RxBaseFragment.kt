@@ -1,15 +1,15 @@
 package com.droidcba.kedditbysteps.commons
 
 import android.support.v4.app.Fragment
-import rx.subscriptions.CompositeSubscription
+import io.reactivex.disposables.CompositeDisposable
 
 open class RxBaseFragment() : Fragment() {
 
-    protected var subscriptions = CompositeSubscription()
+    protected var subscriptions = CompositeDisposable()
 
     override fun onResume() {
         super.onResume()
-        subscriptions = CompositeSubscription()
+        subscriptions = CompositeDisposable()
     }
 
     override fun onPause() {

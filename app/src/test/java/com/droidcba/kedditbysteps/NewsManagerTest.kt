@@ -5,13 +5,10 @@ import com.droidcba.kedditbysteps.commons.RedditNews
 import com.droidcba.kedditbysteps.features.news.NewsManager
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
-import okhttp3.MediaType
-import okhttp3.ResponseBody
+import io.reactivex.Observable
+import io.reactivex.observers.TestObserver
 import org.junit.Before
 import org.junit.Test
-import retrofit2.Call
-import retrofit2.Response
-import rx.observers.TestSubscriber
 import java.util.*
 
 /**
@@ -21,25 +18,22 @@ import java.util.*
  */
 class NewsManagerTest {
 
-    var testSub = TestSubscriber<RedditNews>()
+    var testSub = TestObserver<RedditNews>()
     var apiMock = mock<NewsAPI>()
-    var callMock = mock<Call<RedditNewsResponse>>()
 
     @Before
     fun setup() {
-        testSub = TestSubscriber<RedditNews>()
+        testSub = TestObserver<RedditNews>()
         apiMock = mock<NewsAPI>()
-        callMock = mock<Call<RedditNewsResponse>>()
-        whenever(apiMock.getNews(any(), any())).thenReturn(callMock)
     }
 
     @Test
     fun testSuccess_basic() {
         // prepare
         val redditNewsResponse = RedditNewsResponse(RedditDataResponse(listOf(), null, null))
-        val response = Response.success(redditNewsResponse)
+        val response = Observable.fromArray(redditNewsResponse)
 
-        whenever(callMock.execute()).thenReturn(response)
+        whenever(apiMock.getNews(any(), any())).thenReturn(response)
 
         // call
         val newsManager = NewsManager(apiMock)
@@ -48,7 +42,7 @@ class NewsManagerTest {
         // assert
         testSub.assertNoErrors()
         testSub.assertValueCount(1)
-        testSub.assertCompleted()
+        testSub.assertComplete()
     }
 
     @Test
@@ -64,9 +58,9 @@ class NewsManagerTest {
         )
         val newsResponse = RedditChildrenResponse(newsData)
         val redditNewsResponse = RedditNewsResponse(RedditDataResponse(listOf(newsResponse), null, null))
-        val response = Response.success(redditNewsResponse)
+        val response = Observable.fromArray(redditNewsResponse)
 
-        whenever(callMock.execute()).thenReturn(response)
+        whenever(apiMock.getNews(any(), any())).thenReturn(response)
 
         // call
         val newsManager = NewsManager(apiMock)
@@ -75,25 +69,24 @@ class NewsManagerTest {
         // assert
         testSub.assertNoErrors()
         testSub.assertValueCount(1)
-        testSub.assertCompleted()
+        testSub.assertComplete()
 
-        assert(testSub.onNextEvents[0].news[0].author == newsData.author)
-        assert(testSub.onNextEvents[0].news[0].title == newsData.title)
+        assert(testSub.values()[0].news[0].author == newsData.author)
+        assert(testSub.values()[0].news[0].title == newsData.title)
     }
 
     @Test
     fun testError() {
-        // prepare
-        val responseError = Response.error<RedditNewsResponse>(500,
-                ResponseBody.create(MediaType.parse("application/json"), ""))
 
-        whenever(callMock.execute()).thenReturn(responseError)
+        val response = Observable.error<RedditNewsResponse>(RuntimeException("error"))
+
+        whenever(apiMock.getNews(any(), any())).thenReturn(response)
 
         // call
         val newsManager = NewsManager(apiMock)
         newsManager.getNews("").subscribe(testSub)
 
         // assert
-        assert(testSub.onErrorEvents.size == 1)
+        assert(testSub.errorCount() == 1)
     }
 }
